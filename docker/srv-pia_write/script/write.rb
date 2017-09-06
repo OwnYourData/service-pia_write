@@ -1,14 +1,16 @@
-# ruby write.rb -c '{"url":"http://192.168.1.134:8080","key":"eu.ownyourdata.sample","secret":"eK6PWldcDTqarRfLCerm"}'
+# ruby write.rb -c '{"url":"http://1.2.3.4:5678","key":"eu.ownyourdata.repo","secret":"secret","merge":["field1","field2"],"map":[{"date":"date"},{"field_1":"field1|sub1"}]}'
 
 require 'httparty'
 require 'optparse'
+require 'digest'
 require 'json'
+require "active_support/core_ext/hash/except"
 
 # parsing arguments
 options = {}
 OptionParser.new do |opts|
   opts.banner = "Usage: write.rb [options]"
-  opts.on('-c', '--credentials JSON', 'Zugangsdaten für Datentresor') { |v| options[:credentials] = v }
+  opts.on('-c', '--config JSON', 'Konfiguration zum Speichern im Datentresor') { |v| options[:credentials] = v }
 end.parse!
 
 if options[:credentials].nil?
@@ -24,26 +26,37 @@ rescue JSON::ParserError => e
 end
 
 if ji["url"].nil?
-  puts "Error: fehlende URL"
+  puts "Error: fehlende Url"
   abort
 end
 if ji["key"].nil?
-  puts "Error: fehlender KEY"
+  puts "Error: fehlender Key"
   abort
 end
 if ji["secret"].nil?
-  puts "Error: fehlendes SECRET"
+  puts "Error: fehlendes Secret"
+  abort
+end
+if ji["repo"].nil?
+  puts "Error: fehlendes Repo"
+  abort
+end
+if ji["map"].nil?
+  puts "Error: fehlendes Mapping"
   abort
 end
 
 PIA_URL = ji["url"]
 APP_ID = ji["key"]
 APP_SECRET = ji["secret"]
+REPO = ji["repo"]
+MERGE = ji["merge"]
+MAP = ji["map"]
 
 # reading stdin
 input = ARGF.read
 begin
-  ip = JSON.parse(input)
+  jsonInput = JSON.parse(input)
 rescue JSON::ParserError => e
   puts "Error: ungültiges Input-JSON"
   abort
@@ -136,15 +149,60 @@ def deleteItem(app, repo_url, id)
   response
 end
 
+# create digest
+def createDigest(items, fields)
+  if !items.nil?
+    items.each do |element|
+      myMerge = ""
+      fields.each do |field|
+        myMerge = myMerge + element[field.to_s].to_s + ","
+      end
+      element[:digest] = Digest::SHA2.hexdigest myMerge
+    end
+  else
+    []
+  end
+end
+
 # Setup
 myApp = setupApp(PIA_URL, APP_ID, APP_SECRET)
-myUrl = itemsUrl(myApp["url"], "eu.ownyourdata.sample")
+myUrl = itemsUrl(myApp["url"], REPO)
 
-# write each element
-ip.each do |element|
-  myData = { "date":            Date.parse(element["date"]).strftime("%F"),
-             "description":     element["description"]["desc1"],
-             "descriptionOrig": element["description"]["original"],
-             "value":           element["amount"] }
-  writeItem(myApp, myUrl, myData) 
+# read all existing items
+piaItems = readItems(myApp, myUrl)
+
+# process all input items according to "map"
+newItems = Array.new
+jsonInput.each do |element|
+  myData = {}
+  MAP.each do |pair|
+    myKey = pair.keys[0].to_s
+    myVal = element
+    myValList = pair.values[0].to_s.split('|')
+    myValList.each do |sub|
+      myVal = myVal[sub]
+    end
+    case myKey
+    when 'date'
+      myData.store("date", Date.parse(myVal).strftime("%F"))
+    else
+      myData.store(myKey, myVal)
+    end
+  end
+  newItems << myData
+end
+
+if MERGE.nil?
+  newItems.each do |element|
+    writeItem(myApp, myUrl, element)
+  end
+else
+  # find all hashes in newItems that are not already in piaItems
+  piaDigest = createDigest(piaItems, MERGE).map{ |x| x[:digest] }
+  newDigest = createDigest(newItems, MERGE)
+  newDigest.each do |element|
+    if !piaDigest.include? element[:digest]
+      writeItem(myApp, myUrl, element.except(:digest))
+    end
+  end
 end
