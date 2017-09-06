@@ -1,4 +1,4 @@
-# <img src="https://raw.githubusercontent.com/OwnYourData/oyd-pia/master/src/main/resources/logo_grey.png" width="92"> Service zum Schreiben in den Datentresor
+# <img src="https://raw.githubusercontent.com/OwnYourData/oyd-pia/master/src/main/resources/logo_grey.png" width="92"> Schreibeservice für den Datentresor
 
 Dieses Service liest eine JSON-Struktur von STDIN und schreibt sie anhand der übergebenen Parameter in einen Datentresor.
 
