@@ -1,4 +1,4 @@
-# ruby write.rb -c '{"url":"http://1.2.3.4:5678","key":"eu.ownyourdata.repo","secret":"secret","merge":["field1","field2"],"map":[{"date":"date"},{"field_1":"field1|sub1"}]}'
+# ruby write.rb -c '{"url":"http://1.2.3.4:5678","key":"eu.ownyourdata.repo","secret":"secret","repo":"eu.ownyourdata.repo","partial":"bookings","merge":["field1","field2"],"map":[{"date":"date"},{"field_1":"field1|sub1"}]}'
 
 require 'httparty'
 require 'optparse'
@@ -50,6 +50,7 @@ PIA_URL = ji["url"]
 APP_ID = ji["key"]
 APP_SECRET = ji["secret"]
 REPO = ji["repo"]
+PARTIAL = ji["partial"]
 MERGE = ji["merge"]
 MAP = ji["map"]
 
@@ -61,6 +62,12 @@ rescue JSON::ParserError => e
   puts "Error: ungültiges Input-JSON"
   abort
 end
+if !PARTIAL.nil?
+  jsonInput = jsonInput[PARTIAL]
+end
+
+puts jsonInput.to_s
+abort
 
 # Basis-Funktionen zum Zugriff auf PIA ====================
 # verwendete Header bei GET oder POST Requests
