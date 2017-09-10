@@ -10,52 +10,63 @@ require "active_support/core_ext/hash/except"
 options = {}
 OptionParser.new do |opts|
   opts.banner = "Usage: write.rb [options]"
-  opts.on('-c', '--config JSON', 'Konfiguration zum Speichern im Datentresor') { |v| options[:credentials] = v }
+  opts.on('-c', '--config JSON', 'Konfiguration zum Speichern im Datentresor') { |v| options[:config] = v }
 end.parse!
 
-if options[:credentials].nil?
+if options[:config].nil?
   puts "Error: fehldende Zugangsdaten"
   abort
 end
 
 begin
-  ji = JSON.parse(options[:credentials])
+  config = JSON.parse(options[:config])
 rescue JSON::ParserError => e
-  puts "Error: ungültiges Zugangsdaten-JSON"
+  puts "Error: ungültiges Konfigurations-JSON"
   abort
 end
 
-if ji["url"].nil?
+delete_all = false
+
+if config["url"].nil?
   puts "Error: fehlende Url"
   abort
 end
-if ji["key"].nil?
+if config["key"].nil?
   puts "Error: fehlender Key"
   abort
 end
-if ji["secret"].nil?
+if config["secret"].nil?
   puts "Error: fehlendes Secret"
   abort
 end
-if ji["repo"].nil?
+if config["repo"].nil?
   puts "Error: fehlendes Repo"
   abort
 end
-if ji["map"].nil?
+if config["map"].nil?
   puts "Error: fehlendes Mapping"
   abort
 end
+if !config["delete"].nil?
+  if config["delete"] == 'all'
+    delete_all = true
+  else
+    puts "Error: ungültiger Wert für 'delete'"
+    abort
+  end
+end
 
-PIA_URL = ji["url"]
-APP_ID = ji["key"]
-APP_SECRET = ji["secret"]
-REPO = ji["repo"]
-PARTIAL = ji["partial"]
-MERGE = ji["merge"]
-MAP = ji["map"]
+PIA_URL = config["url"]
+APP_ID = config["key"]
+APP_SECRET = config["secret"]
+REPO = config["repo"]
+PARTIAL = config["partial"]
+MERGE = config["merge"]
+MAP = config["map"]
 
 # reading stdin
 input = ARGF.read
+
 begin
   jsonInput = JSON.parse(input)
 rescue JSON::ParserError => e
@@ -65,9 +76,6 @@ end
 if !PARTIAL.nil?
   jsonInput = jsonInput[PARTIAL]
 end
-
-puts jsonInput.to_s
-abort
 
 # Basis-Funktionen zum Zugriff auf PIA ====================
 # verwendete Header bei GET oder POST Requests
@@ -116,13 +124,25 @@ def readItems(app, repo_url)
       headers = defaultHeaders(app["token"])
       url_data = repo_url + '?size=2000'
       response = HTTParty.get(url_data,
-                              headers: headers).parsed_response
-      if response.nil? or 
-         response == "" or
-         response.include?("error")
+                              headers: headers)
+      response_parsed = response.parsed_response
+      if response_parsed.nil? or 
+         response_parsed == "" or
+         response_parsed.include?("error")
           nil
       else
-          response
+          recs = response.headers["x-total-count"].to_i
+          if recs > 2000
+              (1..(recs/2000.0).floor).each_with_index do |page|
+                  url_data = repo_url + '?page=' + page.to_s + '&size=2000'
+                  subresp = HTTParty.get(url_data,
+                                         headers: headers).parsed_response
+                  response_parsed = response_parsed + subresp
+              end
+              response_parsed
+          else
+              response_parsed
+          end
       end
   end
 end
@@ -154,6 +174,16 @@ def deleteItem(app, repo_url, id)
   response = HTTParty.delete(url,
                              headers: headers)
   response
+end
+
+# alle Daten einer Liste (Repo) löschen
+def deleteRepo(app, repo_url)
+  allItems = readItems(app, repo_url)
+  if !allItems.nil?
+    allItems.each do |item|
+      deleteItem(app, repo_url, item["id"])
+    end
+  end
 end
 
 # create digest
@@ -196,7 +226,14 @@ jsonInput.each do |element|
       myData.store(myKey, myVal)
     end
   end
+  if !element["_oydRepoName"].nil?
+    myData.store("_oydRepoName", element["_oydRepoName"])
+  end
   newItems << myData
+end
+
+if delete_all
+  deleteRepo(myApp, myUrl)
 end
 
 if MERGE.nil?
