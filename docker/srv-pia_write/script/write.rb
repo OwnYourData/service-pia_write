@@ -60,6 +60,7 @@ PIA_URL = config["url"]
 APP_ID = config["key"]
 APP_SECRET = config["secret"]
 REPO = config["repo"]
+REPONAME = config["repoName"]
 PARTIAL = config["partial"]
 MERGE = config["merge"]
 MAP = config["map"]
@@ -226,7 +227,11 @@ jsonInput.each do |element|
       myData.store(myKey, myVal)
     end
   end
-  if !element["_oydRepoName"].nil?
+  if element["_oydRepoName"].nil?
+    if !(REPONAME.nil? or REPONAME == '')
+      myData.store("_oydRepoName", REPONAME)
+    end
+  else
     myData.store("_oydRepoName", element["_oydRepoName"])
   end
   newItems << myData
