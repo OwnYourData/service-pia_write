@@ -212,29 +212,36 @@ piaItems = readItems(myApp, myUrl)
 # process all input items according to "map"
 newItems = Array.new
 jsonInput.each do |element|
-  myData = {}
-  MAP.each do |pair|
-    myKey = pair.keys[0].to_s
-    myVal = element
-    myValList = pair.values[0].to_s.split('|')
-    myValList.each do |sub|
-      myVal = myVal[sub]
+  doImport = true
+  begin
+    myData = {}
+    MAP.each do |pair|
+      myKey = pair.keys[0].to_s
+      myVal = element
+      myValList = pair.values[0].to_s.split('|')
+      myValList.each do |sub|
+        myVal = myVal[sub]
+      end
+      case myKey
+      when 'date'
+          myData.store("date", Date.parse(myVal).strftime("%F"))
+      else
+        myData.store(myKey, myVal)
+      end
     end
-    case myKey
-    when 'date'
-      myData.store("date", Date.parse(myVal).strftime("%F"))
+    if element["_oydRepoName"].nil?
+      if !(REPONAME.nil? or REPONAME == '')
+        myData.store("_oydRepoName", REPONAME)
+      end
     else
-      myData.store(myKey, myVal)
+      myData.store("_oydRepoName", element["_oydRepoName"])
     end
+  rescue
+    doImport = false
   end
-  if element["_oydRepoName"].nil?
-    if !(REPONAME.nil? or REPONAME == '')
-      myData.store("_oydRepoName", REPONAME)
-    end
-  else
-    myData.store("_oydRepoName", element["_oydRepoName"])
+  if doImport
+    newItems << myData
   end
-  newItems << myData
 end
 
 if delete_all
