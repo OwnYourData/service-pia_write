@@ -1,3 +1,3 @@
 #!/bin/sh
 
-cat | ruby /srv-pia_write/write.rb -c $1
+cat | Rscript /srv-pia_write/write.R $1

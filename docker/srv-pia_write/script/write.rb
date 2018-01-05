@@ -27,15 +27,15 @@ end
 
 delete_all = false
 
-if config["url"].nil?
+if config["pia_url"].nil?
   puts "Error: fehlende Url"
   abort
 end
-if config["key"].nil?
+if config["app_key"].nil?
   puts "Error: fehlender Key"
   abort
 end
-if config["secret"].nil?
+if config["app_secret"].nil?
   puts "Error: fehlendes Secret"
   abort
 end
@@ -56,9 +56,9 @@ if !config["delete"].nil?
   end
 end
 
-PIA_URL = config["url"]
-APP_ID = config["key"]
-APP_SECRET = config["secret"]
+PIA_URL = config["pia_url"]
+APP_ID = config["app_key"]
+APP_SECRET = config["app_secret"]
 REPO = config["repo"]
 REPONAME = config["repoName"]
 PARTIAL = config["partial"]
