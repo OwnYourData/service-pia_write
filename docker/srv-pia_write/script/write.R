@@ -1,21 +1,13 @@
+# write data to data vault
+# last update: 2018-01-07
+
 options(warn=-1)
 
 # get command line options ====
-localExecute <- FALSE
 write_config <- ''
 args <- commandArgs(trailingOnly=TRUE)
 if(length(args) > 0){
-        if(args[1] == '-l'){
-                localExecute <- TRUE
-                if(length(args) == 2){
-                        write_config <- args[2]
-                } else {
-                        stop('invalid parameters')
-                }
-                args <- args[c(FALSE, rep(TRUE, length(args)-1))]
-        } else {
-                write_config <- args[1]
-        }
+        write_config <- args[1]
 }
 configParsed <- ''
 if(nchar(write_config) > 0){
@@ -60,7 +52,7 @@ if('app_secret' %in% names(configParsed)){
 
 repo <- ''
 if('repo' %in% names(configParsed)){
-        repo <- configParsed$repo 
+        repo <- configParsed$repo
 } else {
         stop('invalid format: attribute "repo" missing')
 }
@@ -84,23 +76,22 @@ if(!('map' %in% names(configParsed))){
         stop('invalid format: attribute "map" missing')
 }
 
-# load helpeR ====
-if(localExecute){
-        srcPath <- '/Users/christoph/oyd/service-pia_write/docker/srv-pia_write/script/'
-} else {
-        srcPath <- '/srv-pia_write/'
-}
-source(paste0(srcPath, 'srvBase.R'))
-source(paste0(srcPath, 'srvHelper.R'))
-source(paste0(srcPath, 'general.R'))
-
 # connect to PIA ====
-app <- setupApp(pia_url, app_key, app_secret, '')
-repo_url <- itemsUrl(app$url, repo)
+app <- oydapp::setupApp(pia_url, app_key, app_secret, '')
+repo_url <- oydapp::itemsUrl(app$url, repo)
+public_key <- oydapp::getRepoPubKey(app, repo)
+if(nchar(public_key) > 0){
+        app$encryption <- data.frame(
+                repo = as.character(repo),
+                key  = public_key,
+                read = FALSE,
+                stringsAsFactors = FALSE
+        )
+}
 
 # option: delete all items before import ====
 if(delete_all){
-        deleteRepo(app, repo_url)
+        oydapp::deleteRepo(app, repo_url)
 }
 
 # partial: subset of input ===
@@ -126,19 +117,22 @@ if(nrow(inputParsed) > 0){
         }
 
         if("merge" %in% names(configParsed)){
-                pia_items <- readItems(app, repo_url)
-                pia_items <- createDigest(pia_items, unlist(configParsed$merge))
-                new_items <- createDigest(new_items, unlist(configParsed$merge))
+                pia_items <- oydapp::readItems(app, repo_url)
+                pia_items <- oydapp::createDigest(pia_items, 
+                                                  unlist(configParsed$merge))
+                new_items <- oydapp::createDigest(new_items, 
+                                                  unlist(configParsed$merge))
                 for(i in 1:nrow(new_items)){
                         if(!(new_items[i,'digest'] %in% pia_items$digest)){
                                 record <- as.list(new_items[, ])
                                 record$digest <- NULL
-                                writeItem(app, repo_url, record)
+                                oydapp::writeOydItem(app, repo_url, record)
                         }
                 }
         } else {
                 for(i in 1:nrow(new_items)){
-                        tmp <- writeItem(app, repo_url, as.list(new_items[i,]))
+                        tmp <- oydapp::writeOydItem(app, repo_url,
+                                                    as.list(new_items[i,]))
                 }
         }
 }
