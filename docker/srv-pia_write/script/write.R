@@ -1,7 +1,7 @@
 # write data to data vault
 # last update: 2018-01-07
 
-options(warn=-1)
+#options(warn=-1)
 
 # get command line options ====
 write_config <- ''
@@ -23,10 +23,11 @@ if(nchar(write_config) > 0){
 myStdin <- file("stdin")
 input <- suppressWarnings(readLines(myStdin))
 close(myStdin)
+
 if(!jsonlite::validate(input)){
         stop('invalid input: stdin - cannot parse JSON')
 }
-inputParsed <- as.data.frame(jsonlite::fromJSON(input))
+inputJSON <- jsonlite::fromJSON(input)
 
 # validation ====
 pia_url <- ''
@@ -80,6 +81,7 @@ if(!('map' %in% names(configParsed))){
 app <- oydapp::setupApp(pia_url, app_key, app_secret, '')
 repo_url <- oydapp::itemsUrl(app$url, repo)
 public_key <- oydapp::getRepoPubKey(app, repo)
+
 if(nchar(public_key) > 0){
         app$encryption <- data.frame(
                 repo = as.character(repo),
@@ -96,9 +98,11 @@ if(delete_all){
 
 # partial: subset of input ===
 if('partial' %in% names(configParsed)){
-        inputParsed <- inputParsed[configParsed$partial]
+        inputParsed <- as.data.frame(inputJSON[configParsed$partial])
+} else {
+        inputParsed <- as.data.frame(inputJSON)
 }
-
+inputParsed <- jsonlite::flatten(inputParsed, recursive = TRUE)
 
 # create data.frame from input with new mapping
 new_items <- data.frame()
@@ -120,19 +124,22 @@ if(nrow(inputParsed) > 0){
                 pia_items <- oydapp::readItems(app, repo_url)
                 pia_items <- oydapp::createDigest(pia_items, 
                                                   unlist(configParsed$merge))
-                new_items <- oydapp::createDigest(new_items, 
-                                                  unlist(configParsed$merge))
+                check_items <- oydapp::createDigest(new_items, 
+                                                    unlist(configParsed$merge))
                 for(i in 1:nrow(new_items)){
-                        if(!(new_items[i,'digest'] %in% pia_items$digest)){
-                                record <- as.list(new_items[, ])
-                                record$digest <- NULL
-                                oydapp::writeOydItem(app, repo_url, record)
+                        if(!(check_items[i,'digest'] %in% pia_items$digest)){
+                                record <- as.list(new_items[i, ])
+                                retVal <- oydapp::writeOydItem(app, 
+                                                               repo_url, 
+                                                               record)
                         }
                 }
         } else {
                 for(i in 1:nrow(new_items)){
-                        tmp <- oydapp::writeOydItem(app, repo_url,
+                        retVal <- oydapp::writeOydItem(app, 
+                                                    repo_url,
                                                     as.list(new_items[i,]))
+                        cat(paste(toString(retVal), " \n"))
                 }
         }
 }
