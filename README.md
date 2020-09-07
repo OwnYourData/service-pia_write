@@ -25,4 +25,4 @@ If you want to contribute, please follow these steps:
 
 ## Lizenz
 
-[MIT License 2020 - OwnYourData.eu](https://github.com/OwnYourData/service-pia_write/master/LICENSE)
+[MIT License 2020](https://github.com/OwnYourData/service-pia_write/blob/master/LICENSE) - [OwnYourData.eu](https://www.ownyourdata.eu)
