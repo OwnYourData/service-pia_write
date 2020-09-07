@@ -139,7 +139,15 @@ if(nrow(inputParsed) > 0){
                         retVal <- oydapp::writeOydItem(app, 
                                                     repo_url,
                                                     as.list(new_items[i,]))
-                        cat(paste(toString(retVal), " \n"))
+                        if(retVal == ''){
+                            Sys.sleep(3)
+                            retVal <- oydapp::writeOydItem(app, 
+                                                        repo_url,
+                                                        as.list(new_items[i,]))
+                            if(retVal == ''){
+                                cat(paste(toString(attr(retVal, "error")), "\n"))
+                            }
+                        }
                 }
         }
 }

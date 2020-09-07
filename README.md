@@ -1,25 +1,28 @@
-# <img src="https://raw.githubusercontent.com/OwnYourData/oyd-pia/master/src/main/resources/logo_grey.png" width="92"> Schreibeservice für den Datentresor
+# <img src="https://raw.githubusercontent.com/OwnYourData/oyd-pia/master/src/main/resources/logo_grey.png" width="92"> Data Vault Write Service
 
-Dieses Service liest eine JSON-Struktur von STDIN und schreibt sie anhand der übergebenen Parameter in einen Datentresor.
+This service reads JSON from STDIN and writes it to an OwnYourData Data Vault based on the parameters passed.
 
-## Verwendung
-Dieses Service steht als [Docker](https://www.docker.com) Image hier zur Verfügung: https://hub.docker.com/r/oydeu/srv-pia_write/  
-Dort ist auch die Verwendung beschrieben.
+## Usage
 
-## Verbessere das Service zum Schreiben in den Datentresor
+This service is available as a [Docker](https://www.docker.com) image here: https://hub.docker.com/r/oydeu/srv-pia_write/    
+The usage is also described there.
 
-Bitte melde Fehler oder Vorschläge im [GitHub Issue-Tracker](https://github.com/OwnYourData/service-pia_write/issues) und halte dich dabei an die [Contributor Guidelines](https://github.com/twbs/ratchet/blob/master/CONTRIBUTING.md).
+&nbsp;    
 
-Wenn du selbst das Service weiterentwickeln möchtest, folge diesen Schritten:
+## Improve the OwnYourData Data Vault
+
+Please report bugs and suggestions for new features using the [GitHub Issue-Tracker](https://github.com/OwnYourData/service-pia_write/issues) and follow the [Contributor Guidelines](https://github.com/twbs/ratchet/blob/master/CONTRIBUTING.md).
+
+If you want to contribute, please follow these steps:
 
 1. Fork it!
-2. erstelle einen Feature Branch: `git checkout -b my-new-feature`
-3. Commit deine Änderungen: `git commit -am 'Add some feature'`
-4. Push in den Branch: `git push origin my-new-feature`
-5. Sende einen Pull Request
+2. Create a feature branch: `git checkout -b my-new-feature`
+3. Commit changes: `git commit -am 'Add some feature'`
+4. Push into branch: `git push origin my-new-feature`
+5. Send a Pull Request
 
 &nbsp;    
 
 ## Lizenz
 
-[MIT Lizenz 2017 - OwnYourData.eu](https://raw.githubusercontent.com/OwnYourData/service-pia_write/master/LICENSE)
+[MIT License 2020 - OwnYourData.eu](https://github.com/OwnYourData/service-pia_write/master/LICENSE)

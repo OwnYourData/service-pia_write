@@ -21,7 +21,7 @@ RUN apt-get update \
         && R -e "devtools::install_github('ownyourdata/oydapp')" \
         && mkdir -p /srv-pia_write
 
-RUN R -e "devtools::install_github('ownyourdata/oydapp')"
+RUN R -e "devtools::install_github('ownyourdata/oydapp', force=TRUE)"
 USER docker
 
 COPY script/run.sh /bin/run.sh
